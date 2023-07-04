@@ -1,6 +1,31 @@
-# Walnut App Template
+# LightRay
 
-This is a simple app template for [Walnut](https://github.com/TheCherno/Walnut) - unlike the example within the Walnut repository, this keeps Walnut as an external submodule and is much more sensible for actually building applications. See the [Walnut](https://github.com/TheCherno/Walnut) repository for more details.
+LightRay is a simple toy ray tracing example that demonstrates the basics of ray tracing. It utilizes the Walnut project ([https://github.com/TheCherno/Walnut](https://github.com/TheCherno/Walnut)), Imgui, and Vulkan to create visualizations. This project serves as a starting point for me to learning about ray tracing techniques.
+
+## Prerequisites
+
+Before getting started with LightRay, ensure that you have the following dependencies installed:
+
+- [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) (or compatible versions)
+- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home) for Vulkan support
+- [Premake5](https://premake.github.io/) for project generation
 
 ## Getting Started
-Once you've cloned, you can customize the `premake5.lua` and `WalnutApp/premake5.lua` files to your liking (eg. change the name from "WalnutApp" to something else).  Once you're happy, run `scripts/Setup.bat` to generate Visual Studio 2022 solution/project files. Your app is located in the `WalnutApp/` directory, which some basic example code to get you going in `WalnutApp/src/WalnutApp.cpp`. I recommend modifying that WalnutApp project to create your own application, as everything should be setup and ready to go.
+
+To set up the LightRay project, follow these steps:
+
+1. Clone the LightRay repository to your local machine:
+
+```shell
+git clone https://github.com/prakashrx/LightRay.git
+cd LightRay
+```
+
+2. Run the `setup.bat` script located in the `scripts` directory. This script will generate the Visual Studio solution and project files:
+
+```shell
+scripts/Setup.bat
+```
+
+3.  Open the generated Visual Studio solution (`LightRay.sln`).
+4.  Build the project using Visual Studio by selecting the appropriate configuration and hitting the build button.
