@@ -39,7 +39,79 @@ void LightRay::Renderer::Render()
 
 uint32_t LightRay::Renderer::PerPixel(glm::vec2 coord)
 {
-	uint8_t r = (uint8_t)(coord.x * 255.0f);
-	uint8_t g = (uint8_t)(coord.y * 255.0f);
-	return 0xff000000 | (g << 8) | r;
+
+	/*
+	* Sphere Equation : x*x + y*y + z*z = r*r   which is nothing but P.P (dot product) where P is a 3d point on the surface of the sphere. 
+	* A more generic form would be  (P-C).(P-C) = r*r , where C is the 3d center point of that sphere. 
+	* If C is (0,0,0) then the equation simply becomes P.P = r*r
+	*/
+
+	/*
+	* Ray Equation : O + tD.
+	* where O is the origin point of the ray, and D is the unit vector that represents the Direction.
+	* t is the time step which when multiplied by D gives you the point at time t along the ray.
+	* 
+	*/
+
+	/*
+	* you want to find the point where the ray intersects with the sphere, if any. 
+	* That is, you want to find a value of t such that R lies on the sphere. 
+	* Substituting the second equation into the first gives: (O + tD) . (O + tD) = r*r
+	* Expanding this out, rearranging terms and simplifying gives a quadratic equation in t:
+		t*t*(D.D) + t*2*(D.O) + O.O - r*r = 0
+		the generic form would be : t*t*(D.D) + t*2*(D.(O-C)) + (O-C).(O-C) - r*r = 0
+	*/
+
+	/*
+	* A quadratic equation has the general form "at^2 + bt + c = 0", and its solutions can be found using the quadratic formula:
+	* t = [-b ± sqrt(b*b - 4ac)] / (2a)
+	* If the term under the square root (b*b - 4ac), called the discriminant, is negative, then the equation has no real solutions and the ray does not intersect with the sphere. 
+	* If the discriminant is zero, there is one solution and the ray is tangent to the sphere. If the discriminant is positive, there are two solutions: one where the ray enters the sphere, and one where it exits. 
+	* For rendering purposes, you generally want the smaller of the two positive solutions, as that is the first point the ray hits.
+	*/
+
+	/*
+	* a = D.D
+	* b = 2*(D.O)
+	* c = O.O - r*r
+	* discriminant = b*b - 4*a*c
+	* where D is the ray direction, O is the ray origin
+	*/
+
+	/*
+	* The normalized device coordinates still range from -1 to 1 on the x and y axes, representing your viewport (or image plane) in front of the camera.
+	*/
+	coord = coord * 2.0f - 1.0f;
+
+	/*
+	* Suppose the sphere is still at the origin, with a radius of 0.5.
+	*/
+	auto r = 0.5f;
+
+	/*
+	* place your camera (the origin of the rays) at some point along the negative z-axis, say at (0,0,-1). This will have the camera looking towards the sphere and the positive z direction.
+	*/
+	auto O = glm::vec3(0, 0, -1.0f);
+
+	/*
+	* In 3D space, a vector pointing from one point to another is found by subtracting the coordinates of the first point from the coordinates of the second.
+	So in this case:
+	O (0,0,-1) is the origin of the ray (the location of the camera)
+	P (x,y,0) is the point on the image plane that we want the ray to pass through
+	The vector D = P - O then gives the direction in which the ray should be cast.
+	*/
+	auto D = glm::vec3(coord, 0.0f) - O;
+	
+	auto a = glm::dot(D, D);
+	auto b = 2.0f * glm::dot(D, O);
+	auto c = glm::dot(O, O) - r*r;
+
+	auto discriminant = b * b - 4 * a * c;
+	if (discriminant > 0) {
+		return 0xffff00ff;
+	}
+
+	uint8_t rc = (uint8_t)(coord.x * 255.0f);
+	uint8_t gc = (uint8_t)(coord.y * 255.0f);
+	return 0xff000000 | (gc << 8) | rc;
 }
