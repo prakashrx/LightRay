@@ -99,6 +99,8 @@ uint32_t LightRay::Renderer::PerPixel(glm::vec2 coord)
 	O (0,0,-1) is the origin of the ray (the location of the camera)
 	P (x,y,0) is the point on the image plane that we want the ray to pass through
 	The vector D = P - O then gives the direction in which the ray should be cast.
+
+	This gives a vector (x, y, 1) that points from the camera location (0,0,-1) to the desired point on the image plane (x, y, 0). This vector D defines the direction of the ray for ray tracing.
 	*/
 	auto D = glm::vec3(coord, 0.0f) - O;
 	
