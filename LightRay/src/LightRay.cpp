@@ -3,10 +3,15 @@
 
 #include "LightRay.h"
 #include "Renderer.h"
+#include "Camera.h"
 
 class ExampleLayer : public Walnut::Layer
 {
 public:
+	virtual void OnUpdate(float ts) override
+	{
+		m_Camera.OnUpdate(ts);
+	}
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Settings");
@@ -35,12 +40,14 @@ public:
 
 	void Render() {
 		m_Renderer.Resize(m_ViewPortWidth, m_ViewPortHeight);
-		m_Renderer.Render();
+		m_Camera.OnResize(m_ViewPortWidth, m_ViewPortHeight);
+		m_Renderer.Render(m_Camera);
 	}
 
 private:
 	uint32_t m_ViewPortWidth = 0, m_ViewPortHeight = 0;
 	LightRay::Renderer m_Renderer;
+	Camera m_Camera;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)

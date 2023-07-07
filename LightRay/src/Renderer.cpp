@@ -20,17 +20,29 @@ void LightRay::Renderer::Resize(uint32_t width, uint32_t height)
 	m_ImageData = new uint32_t[width  * height];
 }
 
-void LightRay::Renderer::Render()
+void LightRay::Renderer::Render(const Camera& camera)
 {
 	Walnut::Timer timer;
+
+	Ray ray;
+	ray.Origin = camera.GetPosition();
+
 	float aspectRatio = m_FinalImage->GetWidth() / (float)m_FinalImage->GetHeight();
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++)
 		{
 
-			glm::vec2 coord { (float)x * aspectRatio / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight() };
-			auto pixelColor = PerPixel(coord);
+			//glm::vec2 coord { (float)x * aspectRatio / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight() };
+			//// The normalized device coordinates still range from -1 to 1 on the x and y axes, representing your viewport (or image plane) in front of the camera.
+			//coord = coord * 2.0f - 1.0f;
+			//auto pixelColor = PerPixel(coord);
+			//pixelColor = glm::clamp(pixelColor, glm::vec4(0.0f), glm::vec4(1.0f));
+			//m_ImageData[y * m_FinalImage->GetWidth() + x] = Utils::ConvertToUint32(pixelColor);
+
+			
+			ray.Direction = camera.GetRayDirections()[y * m_FinalImage->GetWidth() + x];
+			auto pixelColor = TraceRay(ray);
 			pixelColor = glm::clamp(pixelColor, glm::vec4(0.0f), glm::vec4(1.0f));
 			m_ImageData[y * m_FinalImage->GetWidth() + x] = Utils::ConvertToUint32(pixelColor);
 		}
@@ -39,6 +51,38 @@ void LightRay::Renderer::Render()
 	m_FinalImage->SetData(m_ImageData);
 	m_LastRenderTime = timer.ElapsedMillis();
 }
+
+color LightRay::Renderer::TraceRay(const Ray& ray)
+{
+
+	auto r = 0.5f;
+	const glm::vec3& O = ray.Origin;
+	const glm::vec3& D = ray.Direction;
+
+	auto a = glm::dot(D, D);
+	auto b = 2.0f * glm::dot(D, O);
+	auto c = glm::dot(O, O) - r * r;
+
+	auto discriminant = b * b - 4 * a * c;
+	if (discriminant < 0)
+		return color(0, 0, 0, 1);
+
+	//t = [-b ± sqrt(b*b - 4ac)] / (2a)
+	auto t0 = (-b - glm::sqrt(discriminant)) / (2.0f * a); // This should be the shortest hit point. because -ve sign
+
+	auto hitpoint = O + (D * t0);
+	auto sphereCenter = glm::vec3(0, 0, 0);
+	auto normal = glm::normalize(hitpoint - sphereCenter);
+
+
+	auto lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+	auto lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f);
+
+	auto sphereColor = color(1, 0, 1, 1);
+
+	return sphereColor * lightIntensity;
+}
+
 
 color LightRay::Renderer::PerPixel(glm::vec2 coord)
 {
@@ -80,11 +124,6 @@ color LightRay::Renderer::PerPixel(glm::vec2 coord)
 	* discriminant = b*b - 4*a*c
 	* where D is the ray direction, O is the ray origin
 	*/
-
-	/*
-	* The normalized device coordinates still range from -1 to 1 on the x and y axes, representing your viewport (or image plane) in front of the camera.
-	*/
-	coord = coord * 2.0f - 1.0f;
 
 	/*
 	* Suppose the sphere is still at the origin, with a radius of 0.5.
@@ -134,3 +173,4 @@ color LightRay::Renderer::PerPixel(glm::vec2 coord)
 	//return color(normal * 0.5f + 0.5f,1);
 	return sphereColor * lightIntensity;
 }
+
