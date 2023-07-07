@@ -1,5 +1,7 @@
 #include "Walnut/Application.h"
 #include "Walnut/EntryPoint.h"
+
+#include "LightRay.h"
 #include "Renderer.h"
 
 class ExampleLayer : public Walnut::Layer

@@ -23,13 +23,16 @@ void LightRay::Renderer::Resize(uint32_t width, uint32_t height)
 void LightRay::Renderer::Render()
 {
 	Walnut::Timer timer;
-	
+	float aspectRatio = m_FinalImage->GetWidth() / (float)m_FinalImage->GetHeight();
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++)
 		{
-			glm::vec2 coord { (float)x / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight() };
-			m_ImageData[y * m_FinalImage->GetWidth() + x] = PerPixel(coord);
+
+			glm::vec2 coord { (float)x * aspectRatio / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight() };
+			auto pixelColor = PerPixel(coord);
+			pixelColor = glm::clamp(pixelColor, glm::vec4(0.0f), glm::vec4(1.0f));
+			m_ImageData[y * m_FinalImage->GetWidth() + x] = Utils::ConvertToUint32(pixelColor);
 		}
 	}
 
@@ -37,7 +40,7 @@ void LightRay::Renderer::Render()
 	m_LastRenderTime = timer.ElapsedMillis();
 }
 
-uint32_t LightRay::Renderer::PerPixel(glm::vec2 coord)
+color LightRay::Renderer::PerPixel(glm::vec2 coord)
 {
 
 	/*
@@ -89,9 +92,9 @@ uint32_t LightRay::Renderer::PerPixel(glm::vec2 coord)
 	auto r = 0.5f;
 
 	/*
-	* place your camera (the origin of the rays) at some point along the negative z-axis, say at (0,0,-1). This will have the camera looking towards the sphere and the positive z direction.
+	* place your camera (the origin of the rays) at some point along the positive z-axis, say at (0,0,1). This will have the camera looking towards the sphere in negative z direction.
 	*/
-	auto O = glm::vec3(0, 0, -1.0f);
+	auto O = glm::vec3(0, 0, 1.0f);
 
 	/*
 	* In 3D space, a vector pointing from one point to another is found by subtracting the coordinates of the first point from the coordinates of the second.
@@ -109,11 +112,25 @@ uint32_t LightRay::Renderer::PerPixel(glm::vec2 coord)
 	auto c = glm::dot(O, O) - r*r;
 
 	auto discriminant = b * b - 4 * a * c;
-	if (discriminant > 0) {
-		return 0xffff00ff;
-	}
+	if (discriminant < 0) 
+		return color(0, 0, 0, 1);
 
-	uint8_t rc = (uint8_t)(coord.x * 255.0f);
-	uint8_t gc = (uint8_t)(coord.y * 255.0f);
-	return 0xff000000 | (gc << 8) | rc;
+	
+
+	//t = [-b ± sqrt(b*b - 4ac)] / (2a)
+	auto t0 = (-b - glm::sqrt(discriminant)) / (2.0f * a); // This should be the shortest hit point. because -ve sign
+	//auto t1 = (-b + glm::sqrt(discriminant)) / (2 * a);
+
+	auto hitpoint = O + (D * t0);
+	auto sphereCenter = glm::vec3(0, 0, 0);
+	auto normal = glm::normalize(hitpoint - sphereCenter);
+
+
+	auto lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+	auto lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f);
+
+	auto sphereColor = color(1, 0, 1, 1);
+	//return color(hitpoint, 1);
+	//return color(normal * 0.5f + 0.5f,1);
+	return sphereColor * lightIntensity;
 }
