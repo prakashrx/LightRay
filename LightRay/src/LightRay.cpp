@@ -4,14 +4,22 @@
 #include "LightRay.h"
 #include "Renderer.h"
 #include "Camera.h"
+#include "Scene.h"
 
 class ExampleLayer : public Walnut::Layer
 {
 public:
+
+	ExampleLayer() {
+		m_Scene.AddSphere(Sphere{ { 0.0f, 0.0f, 0.0f }, 0.5f, { 1.0f, 0.0f, 0.0f, 1.0f } });
+		m_Scene.AddSphere(Sphere{ { 0.0f, 1.0f, -1.0f }, 1.0f, { 1.0f, 0.0f, 1.0f, 1.0f } });
+	}
+
 	virtual void OnUpdate(float ts) override
 	{
 		m_Camera.OnUpdate(ts);
 	}
+
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Settings");
@@ -19,6 +27,21 @@ public:
 		if (ImGui::Button("Render")) {
 			Render();
 		}
+
+		ImGui::End();
+
+		ImGui::Begin("Scene");
+		for (int i = 0; i < m_Scene.m_Spheres.size(); i++)
+		{
+			ImGui::PushID(i);
+			Sphere& sphere = m_Scene.m_Spheres[i];
+			ImGui::ColorEdit4("Color", &sphere.Albedo.x);
+			ImGui::DragFloat("Radius", &sphere.Radius, .1f);
+			ImGui::DragFloat3("Position", &sphere.Origin.x, .1f);
+			ImGui::Separator();
+			ImGui::PopID();
+		}
+		
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.0f, 0.0f });
@@ -41,13 +64,14 @@ public:
 	void Render() {
 		m_Renderer.Resize(m_ViewPortWidth, m_ViewPortHeight);
 		m_Camera.OnResize(m_ViewPortWidth, m_ViewPortHeight);
-		m_Renderer.Render(m_Camera);
+		m_Renderer.Render(m_Scene, m_Camera);
 	}
 
 private:
 	uint32_t m_ViewPortWidth = 0, m_ViewPortHeight = 0;
 	LightRay::Renderer m_Renderer;
 	Camera m_Camera;
+	Scene m_Scene;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)

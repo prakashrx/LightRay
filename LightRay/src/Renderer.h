@@ -3,7 +3,8 @@
 #include "Walnut/Image.h"
 #include "Utils.h"
 #include "Camera.h"
-#include "Ray.h"
+#include "Core.h"
+#include "Scene.h"
 
 namespace LightRay 
 {
@@ -12,7 +13,7 @@ namespace LightRay
 	public:
 		Renderer();
 		void Resize(uint32_t width, uint32_t height);
-		void Render(const Camera& camera);
+		void Render(const Scene& scene, const Camera& camera);
 		color PerPixel(glm::vec2 coord);
 		color TraceRay(const Ray& ray);
 		float GetLastRenderTime() { return m_LastRenderTime; };
@@ -21,6 +22,8 @@ namespace LightRay
 		std::shared_ptr<Walnut::Image> m_FinalImage;
 		uint32_t* m_ImageData = nullptr;
 		float m_LastRenderTime = 0;
+		const Camera* m_ActiveCamera;
+		const Scene* m_ActiveScene;
 	};
 }
 

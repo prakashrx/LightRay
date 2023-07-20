@@ -20,9 +20,13 @@ void LightRay::Renderer::Resize(uint32_t width, uint32_t height)
 	m_ImageData = new uint32_t[width  * height];
 }
 
-void LightRay::Renderer::Render(const Camera& camera)
+void LightRay::Renderer::Render(const Scene& scene, const Camera& camera)
 {
 	Walnut::Timer timer;
+
+	m_ActiveCamera = &camera;
+	m_ActiveScene = &scene;
+
 
 	Ray ray;
 	ray.Origin = camera.GetPosition();
@@ -54,33 +58,44 @@ void LightRay::Renderer::Render(const Camera& camera)
 
 color LightRay::Renderer::TraceRay(const Ray& ray)
 {
+	const Sphere* closestSphere = nullptr;
+	float closestT = FLT_MAX;
+	for (size_t i = 0; i < m_ActiveScene->m_Spheres.size(); i++)
+	{
+		const Sphere& sphere = m_ActiveScene->m_Spheres[i];
+		auto r = sphere.Radius;
+		const glm::vec3& rayOrigin = ray.Origin - sphere.Origin;
+		const glm::vec3& rayDirection = ray.Direction;
 
-	auto r = 0.5f;
-	const glm::vec3& O = ray.Origin;
-	const glm::vec3& D = ray.Direction;
+		auto a = glm::dot(rayDirection, rayDirection);
+		auto b = 2.0f * glm::dot(rayDirection, rayOrigin);
+		auto c = glm::dot(rayOrigin, rayOrigin) - r * r;
 
-	auto a = glm::dot(D, D);
-	auto b = 2.0f * glm::dot(D, O);
-	auto c = glm::dot(O, O) - r * r;
+		auto discriminant = b * b - 4 * a * c;
+		if (discriminant < 0)
+			continue;
 
-	auto discriminant = b * b - 4 * a * c;
-	if (discriminant < 0)
+		//t = [-b ± sqrt(b*b - 4ac)] / (2a)
+		auto t0 = (-b - glm::sqrt(discriminant)) / (2.0f * a); // This should be the shortest hit point. because -ve sign
+		if (closestT >= 0 && t0 < closestT)
+		{
+			closestT = t0;
+			closestSphere = &sphere;
+		}
+	}
+
+	if (!closestSphere)
 		return color(0, 0, 0, 1);
 
-	//t = [-b ± sqrt(b*b - 4ac)] / (2a)
-	auto t0 = (-b - glm::sqrt(discriminant)) / (2.0f * a); // This should be the shortest hit point. because -ve sign
-
-	auto hitpoint = O + (D * t0);
-	auto sphereCenter = glm::vec3(0, 0, 0);
+	const glm::vec3& rayOrigin = ray.Origin - closestSphere->Origin;
+	auto hitpoint = rayOrigin + (ray.Direction * closestT);
+	auto sphereCenter = closestSphere->Origin;
 	auto normal = glm::normalize(hitpoint - sphereCenter);
-
 
 	auto lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 	auto lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f);
 
-	auto sphereColor = color(1, 0, 1, 1);
-
-	return sphereColor * lightIntensity;
+	return closestSphere->Albedo  * lightIntensity;
 }
 
 

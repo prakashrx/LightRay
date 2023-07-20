@@ -1,5 +1,5 @@
 #pragma once
-#include "LightRay.h"
+#include "Core.h"
 
 namespace Utils {
 
